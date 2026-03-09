@@ -1,0 +1,20 @@
+1. Frontend (Aplikasi Web)
+Aplikasi antarmuka pengguna (UI) Anda dibangun menggunakan teknologi modern berbasis React:
+
+Framework Utama: React (versi 19.2.0)
+Build Tool/Bundler: Vite (versi 7.3.1) - Digunakan agar proses pengembangan dan build menjadi sangat cepat.
+Styling (Desain/CSS): Tailwind CSS (versi 4.2.1)
+Routing (Navigasi Halaman): React Router (versi 7.13.1)
+Data Fetching (Pengambilan Data API): TanStack React Query (versi 5.90.21) - Digunakan untuk mengambil, menyimpan cache, dan memperbarui data dari backend.
+Autentikasi: Better Auth (versi 1.5.2)
+2. Backend (API)
+Server yang menangani logika bisnis dan menyediakan data untuk frontend dibangun menggunakan:
+
+Bahasa Pemrograman: TypeScript (versi 5.7.2) berjalan di atas Node.js.
+Framework Web: Express.js (versi 4.21.2) - Framework populer untuk membangun REST API.
+Penyimpanan File: Multer (versi 1.4.5) - Untuk menangani upload file.
+Autentikasi: Better Auth (versi 1.2.0)
+3. Database
+Jenis Database: PostgreSQL - Hal ini terlihat dari penggunaan driver pg (versi 8.13.1) pada backend Anda.
+ORM (Object-Relational Mapping): Drizzle ORM (versi 0.41.0) - Aplikasi Anda tidak menulis query SQL secara manual secara langsung, melainkan menggunakan Drizzle ORM untuk mengelola, membuat skema, dan berinteraksi dengan database PostgreSQL dengan cara yang lebih modern dan aman berkat bantuan TypeScript.
+Ringkasan Singkat: Aplikasi Anda bisa disebut menggunakan stack modern yang sangat solid, yaitu kombinasi React 19 + Vite + Tailwind CSS di bagian depan, dan Node.js + Express + TypeScript + PostgreSQL + Drizzle ORM di bagian belakang. Semuanya diamankan dengan sistem autentikasi dari Better Auth.
