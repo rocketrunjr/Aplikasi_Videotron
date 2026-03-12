@@ -22,8 +22,12 @@ export function useSignIn() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ email, password, rememberMe }) =>
-            signIn.email({ email, password, rememberMe }),
+        mutationFn: ({ email, password, rememberMe, captchaToken }) =>
+            signIn.email({ email, password, rememberMe }, {
+                headers: {
+                    "x-captcha-token": captchaToken,
+                },
+            }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["session"] });
         },
@@ -37,7 +41,7 @@ export function useSignUp() {
     const queryClient = useQueryClient();
 
     return useMutation({
-        mutationFn: ({ email, password, name, phone, company, address, accountType }) =>
+        mutationFn: ({ email, password, name, phone, company, address, accountType, captchaToken }) =>
             signUp.email({
                 email,
                 password,
@@ -46,6 +50,10 @@ export function useSignUp() {
                 company,
                 address,
                 accountType,
+            }, {
+                headers: {
+                    "x-captcha-token": captchaToken,
+                },
             }),
         onSuccess: () => {
             queryClient.invalidateQueries({ queryKey: ["session"] });

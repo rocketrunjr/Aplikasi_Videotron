@@ -13,6 +13,14 @@ const CloudflareTurnstile = ({ siteKey, onVerify, onExpire, theme = 'auto' }) =>
     const widgetIdRef = useRef(null);
     const [loaded, setLoaded] = useState(!!window.turnstile);
 
+    const onVerifyRef = useRef(onVerify);
+    const onExpireRef = useRef(onExpire);
+
+    useEffect(() => {
+        onVerifyRef.current = onVerify;
+        onExpireRef.current = onExpire;
+    }, [onVerify, onExpire]);
+
     const renderWidget = useCallback(() => {
         if (!containerRef.current || !window.turnstile) return;
         // Clean up previous widget
@@ -21,11 +29,11 @@ const CloudflareTurnstile = ({ siteKey, onVerify, onExpire, theme = 'auto' }) =>
         }
         widgetIdRef.current = window.turnstile.render(containerRef.current, {
             sitekey: siteKey,
-            callback: (token) => onVerify?.(token),
-            'expired-callback': () => onExpire?.(),
+            callback: (token) => onVerifyRef.current?.(token),
+            'expired-callback': () => onExpireRef.current?.(),
             theme,
         });
-    }, [siteKey, onVerify, onExpire, theme]);
+    }, [siteKey, theme]);
 
     useEffect(() => {
         // Check if script already loaded

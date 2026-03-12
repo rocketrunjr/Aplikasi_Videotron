@@ -36,7 +36,7 @@ const LoginPage = () => {
         setError('');
 
         try {
-            const result = await signInMutation.mutateAsync({ email, password });
+            const result = await signInMutation.mutateAsync({ email, password, captchaToken });
             if (result?.error) {
                 setError(result.error.message || 'Email atau kata sandi salah.');
                 return;
@@ -130,6 +130,7 @@ const LoginPage = () => {
                                         value={email}
                                         onChange={(e) => setEmail(e.target.value)}
                                         disabled={signInMutation.isPending}
+                                        autoComplete="off"
                                     />
                                     <div className="absolute right-3 top-3 text-neutral-400">
                                         <span className="material-symbols-outlined text-xl">mail</span>
@@ -154,6 +155,7 @@ const LoginPage = () => {
                                         value={password}
                                         onChange={(e) => setPassword(e.target.value)}
                                         disabled={signInMutation.isPending}
+                                        autoComplete="new-password"
                                     />
                                     <button
                                         className="absolute right-3 top-3 text-neutral-400 hover:text-neutral-600 dark:hover:text-neutral-300 transition-colors focus:outline-none"

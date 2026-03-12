@@ -79,6 +79,7 @@ const RegisterPage = () => {
                 password: formData.password,
                 phone: formData.whatsapp,
                 accountType: formData.accountType,
+                captchaToken: captchaToken,
             });
             if (result?.error) {
                 setError(result.error.message || 'Registrasi gagal.');

@@ -5,7 +5,7 @@ import { user } from "./db/schema.js";
 import { eq } from "drizzle-orm";
 
 const ADMIN_EMAIL = "admin@videotron.local";
-const ADMIN_PASSWORD = "admin";
+const ADMIN_PASSWORD = "Admin@2026!";
 const ADMIN_NAME = "Administrator";
 
 async function seedAdmin() {

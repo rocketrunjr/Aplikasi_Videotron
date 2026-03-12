@@ -58,6 +58,57 @@ app.use("/uploads", express.static(uploadDir));
 // ─── Routes ──────────────────────────────────────────────────────────────────
 
 // Auth (Better Auth handles all /api/auth/* routes)
+// Add Captcha verification middleware for sign-in and sign-up
+app.use("/api/auth/sign-in/email", async (req, res, next) => {
+    console.log("[LOGIN] Sign-in attempt received", req.body);
+    const token = req.headers["x-captcha-token"] || req.body?.captchaToken;
+    console.log("[LOGIN] Captcha token received:", token ? "Yes" : "No");
+    
+    if (!token) return res.status(400).json({ message: "Captcha token is required" });
+    try {
+        const formData = new URLSearchParams();
+        formData.append("secret", process.env.TURNSTILE_SECRET_KEY || "");
+        formData.append("response", token as string);
+        const result = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+            body: formData,
+            method: "POST",
+        });
+        const outcome = await result.json();
+        console.log("[LOGIN] Captcha verification outcome:", outcome);
+        if (!outcome.success) {
+            return res.status(400).json({ message: "Invalid captcha token" });
+        }
+        next();
+    } catch (error) {
+        console.error("[LOGIN] Captcha error:", error);
+        return res.status(500).json({ message: "Captcha verification failed" });
+    }
+});
+
+app.use("/api/auth/sign-up/email", async (req, res, next) => {
+    console.log("[REGISTER] Sign-up attempt received");
+    const token = req.headers["x-captcha-token"] || req.body?.captchaToken;
+    console.log("[REGISTER] Captcha token received:", token ? "Yes" : "No");
+    if (!token) return res.status(400).json({ message: "Captcha token is required" });
+    try {
+        const formData = new URLSearchParams();
+        formData.append("secret", process.env.TURNSTILE_SECRET_KEY || "");
+        formData.append("response", token as string);
+        const result = await fetch("https://challenges.cloudflare.com/turnstile/v0/siteverify", {
+            body: formData,
+            method: "POST",
+        });
+        const outcome = await result.json();
+        console.log("[REGISTER] Captcha verification outcome:", outcome);
+        if (!outcome.success) {
+            return res.status(400).json({ message: "Invalid captcha token" });
+        }
+        next();
+    } catch (error) {
+        return res.status(500).json({ message: "Captcha verification failed" });
+    }
+});
+
 // Mount directly on app.all so toNodeHandler receives the full URL path
 app.all("/api/auth/*", toNodeHandler(auth));
 
