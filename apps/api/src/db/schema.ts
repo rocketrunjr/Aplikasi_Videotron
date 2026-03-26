@@ -24,7 +24,7 @@ export const user = pgTable("user", {
     company: text("company"),
     address: text("address"),
     accountType: text("account_type").notNull().default("pribadi"), // pribadi | perusahaan | pemerintah
-    role: text("role").notNull().default("user"), // user | admin
+    role: text("role").notNull().default("user"), // user | admin | petugas
     status: text("status").notNull().default("active"), // active | suspended
     createdAt: timestamp("created_at").notNull().defaultNow(),
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
@@ -156,6 +156,17 @@ export const vouchers = pgTable("vouchers", {
     updatedAt: timestamp("updated_at").notNull().defaultNow(),
 });
 
+export const petugasAssignments = pgTable("petugas_assignments", {
+    id: uuid("id").defaultRandom().primaryKey(),
+    userId: text("user_id")
+        .notNull()
+        .references(() => user.id, { onDelete: "cascade" }),
+    unitId: uuid("unit_id")
+        .notNull()
+        .references(() => videotronUnits.id, { onDelete: "cascade" }),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+});
+
 // ─── Relations ───────────────────────────────────────────────────────────────
 
 export const userRelations = relations(user, ({ many }) => ({
@@ -174,6 +185,7 @@ export const accountRelations = relations(account, ({ one }) => ({
 
 export const videotronUnitRelations = relations(videotronUnits, ({ many }) => ({
     orders: many(orders),
+    petugasAssignments: many(petugasAssignments),
 }));
 
 export const orderRelations = relations(orders, ({ one, many }) => ({
@@ -198,4 +210,9 @@ export const broadcastProofRelations = relations(broadcastProofs, ({ one }) => (
         fields: [broadcastProofs.orderId],
         references: [orders.id],
     }),
+}));
+
+export const petugasAssignmentRelations = relations(petugasAssignments, ({ one }) => ({
+    user: one(user, { fields: [petugasAssignments.userId], references: [user.id] }),
+    unit: one(videotronUnits, { fields: [petugasAssignments.unitId], references: [videotronUnits.id] }),
 }));

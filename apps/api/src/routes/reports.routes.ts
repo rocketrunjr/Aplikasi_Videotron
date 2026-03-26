@@ -2,7 +2,7 @@ import { Router } from "express";
 import { requireAuth, requireAdmin } from "../middleware/auth.js";
 import { db } from "../db/index.js";
 import { orders, videotronUnits, user as userTable, orderDates } from "../db/schema.js";
-import { sql, eq, and, gte, lte, count, sum, min, max } from "drizzle-orm";
+import { sql, eq, and, gte, lte, count, sum, min, max, desc } from "drizzle-orm";
 
 const router = Router();
 
@@ -136,12 +136,15 @@ router.get("/export-json", async (req, res) => {
                 userEmail: userTable.email,
                 unitName: videotronUnits.name,
                 unitLocation: videotronUnits.location,
+                voucherCode: orders.voucherCode,
+                minDate: sql<string>`(SELECT MIN(date) FROM order_dates WHERE order_id = ${orders.id})`,
+                maxDate: sql<string>`(SELECT MAX(date) FROM order_dates WHERE order_id = ${orders.id})`,
             })
             .from(orders)
             .leftJoin(userTable, eq(orders.userId, userTable.id))
             .leftJoin(videotronUnits, eq(orders.unitId, videotronUnits.id))
             .where(conditions.length > 0 ? and(...conditions) : undefined)
-            .orderBy(orders.createdAt);
+            .orderBy(desc(orders.createdAt));
 
         res.json({ data: rows });
     } catch (error: any) {

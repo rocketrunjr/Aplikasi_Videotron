@@ -84,3 +84,47 @@ export async function requireAdmin(
 
     next();
 }
+
+/**
+ * Middleware that requires petugas role.
+ * Must be used AFTER `requireAuth`.
+ */
+export async function requirePetugas(
+    req: Request,
+    res: Response,
+    next: NextFunction
+): Promise<void> {
+    if (!req.user) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+    }
+
+    if (req.user.role !== "petugas") {
+        res.status(403).json({ error: "Forbidden — petugas access required" });
+        return;
+    }
+
+    next();
+}
+
+/**
+ * Middleware that requires admin or petugas role.
+ * Must be used AFTER `requireAuth`.
+ */
+export async function requireAdminOrPetugas(
+    req: Request,
+    res: Response,
+    next: NextFunction
+): Promise<void> {
+    if (!req.user) {
+        res.status(401).json({ error: "Unauthorized" });
+        return;
+    }
+
+    if (req.user.role !== "admin" && req.user.role !== "petugas") {
+        res.status(403).json({ error: "Forbidden — admin or petugas access required" });
+        return;
+    }
+
+    next();
+}

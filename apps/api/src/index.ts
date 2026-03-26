@@ -17,6 +17,7 @@ import dashboardRoutes from "./routes/dashboard.routes.js";
 import uploadsRoutes from "./routes/uploads.routes.js";
 import reportsRoutes from "./routes/reports.routes.js";
 import vouchersRoutes from "./routes/vouchers.routes.js";
+import petugasRoutes from "./routes/petugas.routes.js";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -32,8 +33,16 @@ app.use(
         credentials: true,
     })
 );
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+// Apply body parsers strictly to non-auth routes
+// Better Auth's toNodeHandler needs the raw stream and will fail if the body is already parsed by express.json()
+app.use((req, res, next) => {
+    if (req.path.startsWith("/api/auth")) return next();
+    express.json()(req, res, next);
+});
+app.use((req, res, next) => {
+    if (req.path.startsWith("/api/auth")) return next();
+    express.urlencoded({ extended: true })(req, res, next);
+});
 
 // Serve uploaded files statically
 const uploadDir = process.env.UPLOAD_DIR || "./uploads";
@@ -66,6 +75,7 @@ app.use("/api/auth/sign-in/email", async (req, res, next) => {
     
     if (!token) return res.status(400).json({ message: "Captcha token is required" });
     try {
+        console.log(`[LOGIN] Sending token to Cloudflare: ${String(token).substring(0, 15)}...`);
         const formData = new URLSearchParams();
         formData.append("secret", process.env.TURNSTILE_SECRET_KEY || "");
         formData.append("response", token as string);
@@ -74,9 +84,9 @@ app.use("/api/auth/sign-in/email", async (req, res, next) => {
             method: "POST",
         });
         const outcome = await result.json();
-        console.log("[LOGIN] Captcha verification outcome:", outcome);
+        console.log("[LOGIN] Cloudflare Turnstile response:", JSON.stringify(outcome));
         if (!outcome.success) {
-            return res.status(400).json({ message: "Invalid captcha token" });
+            return res.status(400).json({ message: "Verifikasi Captcha gagal. Coba lagi." });
         }
         next();
     } catch (error) {
@@ -127,6 +137,9 @@ app.use("/api/admin", adminRoutes);
 app.use("/api/admin/users", usersRoutes);
 app.use("/api/admin/reports", reportsRoutes);
 app.use("/api/vouchers", vouchersRoutes);
+
+// Petugas routes
+app.use("/api/petugas", petugasRoutes);
 
 // ─── Health check ────────────────────────────────────────────────────────────
 

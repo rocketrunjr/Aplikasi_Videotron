@@ -3,6 +3,9 @@ import { requireAuth, requireAdmin } from "../middleware/auth.js";
 import * as ordersService from "../services/orders.service.js";
 import * as unitsService from "../services/units.service.js";
 import { getPaginationParams, createPaginatedResult } from "../utils/pagination.js";
+import { db } from "../db/index.js";
+import { user as userTable, petugasAssignments } from "../db/schema.js";
+import { eq, inArray } from "drizzle-orm";
 
 const router = Router();
 
@@ -257,6 +260,83 @@ router.delete("/orders/:id", async (req, res) => {
         res.json({ data: deleted, message: "Order deleted successfully" });
     } catch (error) {
         res.status(500).json({ error: "Failed to delete order" });
+    }
+});
+
+// ─── Petugas Assignment ─────────────────────────────────────────────────────
+
+// GET /api/admin/petugas — List all users with role=petugas
+router.get("/petugas", async (req, res) => {
+    try {
+        const petugasList = await db
+            .select({
+                id: userTable.id,
+                name: userTable.name,
+                email: userTable.email,
+                phone: userTable.phone,
+            })
+            .from(userTable)
+            .where(eq(userTable.role, "petugas"));
+        res.json({ data: petugasList });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch petugas list" });
+    }
+});
+
+// GET /api/admin/units/:id/assignments — Get assigned petugas for a unit
+router.get("/units/:id/assignments", async (req, res) => {
+    try {
+        const assignments = await db
+            .select({
+                id: petugasAssignments.id,
+                userId: petugasAssignments.userId,
+                userName: userTable.name,
+                userEmail: userTable.email,
+            })
+            .from(petugasAssignments)
+            .leftJoin(userTable, eq(petugasAssignments.userId, userTable.id))
+            .where(eq(petugasAssignments.unitId, req.params.id));
+        res.json({ data: assignments });
+    } catch (error) {
+        res.status(500).json({ error: "Failed to fetch assignments" });
+    }
+});
+
+// PUT /api/admin/units/:id/assignments — Set assignments (replace all)
+router.put("/units/:id/assignments", async (req, res) => {
+    try {
+        const unitId = req.params.id;
+        const { userIds } = req.body; // string[]
+        if (!Array.isArray(userIds)) {
+            return res.status(400).json({ error: "userIds must be an array" });
+        }
+
+        // Delete existing assignments for this unit
+        await db.delete(petugasAssignments).where(eq(petugasAssignments.unitId, unitId));
+
+        // Insert new assignments
+        if (userIds.length > 0) {
+            await db.insert(petugasAssignments).values(
+                userIds.map((userId: string) => ({ userId, unitId }))
+            );
+        }
+
+        // Fetch and return the new assignments
+        const assignments = await db
+            .select({
+                id: petugasAssignments.id,
+                userId: petugasAssignments.userId,
+                userName: userTable.name,
+                userEmail: userTable.email,
+            })
+            .from(petugasAssignments)
+            .leftJoin(userTable, eq(petugasAssignments.userId, userTable.id))
+            .where(eq(petugasAssignments.unitId, unitId));
+
+        res.json({ data: assignments });
+    } catch (error) {
+        console.error("Assignment error:", error);
+        res.status(500).json({ error: "Failed to update assignments" });
     }
 });
 

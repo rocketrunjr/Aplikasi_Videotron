@@ -107,13 +107,18 @@ const UserBookingStep2Page = () => {
         return days;
     }, [currentMonth, currentYear, bookedDates, today]);
 
+    const MAX_DAYS = 7;
+
     // Toggle date selection
     const toggleDate = (dateStr) => {
         setSelectedDates(prev => {
-            const next = prev.includes(dateStr)
-                ? prev.filter(d => d !== dateStr)
-                : [...prev, dateStr].sort();
-            return next;
+            if (prev.includes(dateStr)) {
+                return prev.filter(d => d !== dateStr);
+            }
+            if (prev.length >= MAX_DAYS) {
+                return prev; // Don't add more
+            }
+            return [...prev, dateStr].sort();
         });
     };
 
@@ -231,6 +236,7 @@ const UserBookingStep2Page = () => {
 
                                         const { day, dateStr, isPast, isBooked } = cell;
                                         const isSelected = selectedDates.includes(dateStr);
+                                        const isMaxReached = selectedDates.length >= MAX_DAYS && !isSelected;
 
                                         if (isPast) {
                                             return (
@@ -258,7 +264,10 @@ const UserBookingStep2Page = () => {
                                             <button
                                                 key={dateStr}
                                                 onClick={() => toggleDate(dateStr)}
-                                                className={`aspect-square rounded-lg flex flex-col items-center justify-center relative transition-all ${isSelected
+                                                disabled={isMaxReached}
+                                                className={`aspect-square rounded-lg flex flex-col items-center justify-center relative transition-all ${isMaxReached
+                                                    ? 'text-slate-400 bg-slate-50 cursor-not-allowed border border-slate-100'
+                                                    : isSelected
                                                     ? 'text-white bg-[#2563EB] shadow-md shadow-blue-500/30 border border-[#2563EB] ring-2 ring-blue-200'
                                                     : 'text-slate-700 hover:bg-blue-50 hover:text-primary hover:border-primary border border-slate-200 bg-white shadow-sm'
                                                     }`}
@@ -297,6 +306,14 @@ const UserBookingStep2Page = () => {
                                     <span className="text-xs text-slate-500">Sudah Lewat</span>
                                 </div>
                             </div>
+
+                            {/* Max Days Warning */}
+                            {selectedDates.length >= MAX_DAYS && (
+                                <div className="mt-4 flex items-center gap-2 p-3 rounded-lg bg-amber-50 border border-amber-200 text-amber-800 text-sm">
+                                    <span className="material-symbols-outlined text-lg">warning</span>
+                                    <span>Maksimal <strong>{MAX_DAYS} hari</strong> per pemesanan sudah tercapai.</span>
+                                </div>
+                            )}
                         </div>
                     </div>
 

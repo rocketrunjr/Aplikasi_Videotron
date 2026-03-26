@@ -25,6 +25,8 @@ const LoginPage = () => {
         if (user) {
             if (user.role === 'admin') {
                 navigate('/admin', { replace: true });
+            } else if (user.role === 'petugas') {
+                navigate('/petugas', { replace: true });
             } else {
                 navigate('/user/dashboard', { replace: true });
             }
@@ -38,12 +40,15 @@ const LoginPage = () => {
         try {
             const result = await signInMutation.mutateAsync({ email, password, captchaToken });
             if (result?.error) {
-                setError(result.error.message || 'Email atau kata sandi salah.');
+                // If it's a 400 with our custom message or a generic error with 'captcha' inside
+                const isCaptchaErr = result.error.status === 400 || result.error.message?.toLowerCase().includes('captcha');
+                setError(isCaptchaErr ? 'Verifikasi Captcha gagal. Silakan muat ulang halaman atau coba lagi.' : (result.error.message || 'Email atau kata sandi salah.'));
                 return;
             }
             // After successful sign in, useAuth will update and useEffect will redirect
         } catch (err) {
-            setError(err?.message || 'Email atau kata sandi salah. Silakan coba lagi.');
+            const isCaptchaErr = err?.status === 400 || err?.message?.toLowerCase().includes('captcha');
+            setError(isCaptchaErr ? 'Verifikasi Captcha gagal. Silakan muat ulang halaman atau coba lagi.' : (err?.message || 'Email atau kata sandi salah. Silakan coba lagi.'));
         }
     };
 

@@ -110,12 +110,12 @@ const UserBookingStep1Page = () => {
                                         <div className="flex items-center gap-4 border-t border-slate-100 pt-4">
                                             <div className="flex flex-col">
                                                 <span className="text-xs text-slate-500 uppercase font-semibold">Ukuran</span>
-                                                <span className="text-sm font-medium text-slate-900">{unit.size || '-'}</span>
+                                                <span className="text-[12px] font-medium text-slate-900">{unit.size || '-'}</span>
                                             </div>
                                             <div className="h-8 w-px bg-slate-200"></div>
                                             <div className="flex flex-col">
                                                 <span className="text-xs text-slate-500 uppercase font-semibold">Tipe</span>
-                                                <span className="text-sm font-medium text-slate-900 capitalize">{unit.type || '-'}</span>
+                                                <span className="text-[12px] font-medium text-slate-900 capitalize">{unit.type || '-'}</span>
                                             </div>
                                         </div>
                                         <div className="mt-4 pt-4 border-t border-slate-100 flex items-center justify-between">

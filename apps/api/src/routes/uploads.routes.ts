@@ -66,7 +66,7 @@ function getFileUrl(req: any, file: Express.Multer.File): string {
 router.post("/:type", requireAuth, (req, res, next) => {
     // Check admin-only upload types
     const adminOnlyTypes = ["broadcast-proof", "invoice", "unit-image"];
-    if (adminOnlyTypes.includes(req.params.type as string) && req.user?.role !== "admin") {
+    if (adminOnlyTypes.includes(req.params.type as string) && req.user?.role !== "admin" && req.user?.role !== "petugas") {
         res.status(403).json({ error: "Admin access required for this upload type" });
         return;
     }

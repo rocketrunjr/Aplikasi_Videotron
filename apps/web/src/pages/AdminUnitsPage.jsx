@@ -3,6 +3,8 @@ import AdminLayout from '../components/AdminLayout';
 import ConfirmDialog from '../components/ConfirmDialog';
 import { useAdminUnits, useCreateUnit, useUpdateUnit, useToggleUnitStatus, useDeleteUnit } from '../hooks/useAdmin';
 import { useUploadFile } from '../hooks/useUploads';
+import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
+import { apiClient } from '../lib/api-client';
 
 const formatCurrency = (amount) => {
     return new Intl.NumberFormat('id-ID', { style: 'currency', currency: 'IDR', minimumFractionDigits: 0 }).format(amount);
@@ -19,6 +21,8 @@ const AdminUnitsPage = () => {
     });
     const [imageFile, setImageFile] = useState(null);
     const [confirmAction, setConfirmAction] = useState(null);
+    const [assignedPetugas, setAssignedPetugas] = useState([]);
+    const queryClient = useQueryClient();
 
     const { data, isLoading, error } = useAdminUnits({
         search: search || undefined,
@@ -31,12 +35,26 @@ const AdminUnitsPage = () => {
     const deleteMutation = useDeleteUnit();
     const uploadFileMutation = useUploadFile();
 
+    // Fetch petugas list
+    const { data: petugasData } = useQuery({
+        queryKey: ['admin', 'petugas'],
+        queryFn: () => apiClient.get('/api/admin/petugas'),
+    });
+    const petugasList = petugasData?.data || [];
+
+    // Save assignments mutation
+    const saveAssignmentsMutation = useMutation({
+        mutationFn: ({ unitId, userIds }) => apiClient.put(`/api/admin/units/${unitId}/assignments`, { userIds }),
+        onSuccess: () => queryClient.invalidateQueries({ queryKey: ['admin'] }),
+    });
+
     const units = data?.data || data || [];
 
     const openAddModal = () => {
         setEditingUnit(null);
         setFormData({ name: '', code: '', location: '', city: 'Bontang', size: '', type: 'outdoor', aspectRatio: '16:9', pricePerDay: '', maxSlotsPerDay: '1' });
         setImageFile(null);
+        setAssignedPetugas([]);
         setIsModalOpen(true);
     };
 
@@ -50,6 +68,10 @@ const AdminUnitsPage = () => {
         });
         setImageFile(null);
         setIsModalOpen(true);
+        // Load existing assignments
+        apiClient.get(`/api/admin/units/${unit.id}/assignments`).then(res => {
+            setAssignedPetugas((res?.data || []).map(a => a.userId));
+        }).catch(() => setAssignedPetugas([]));
     };
 
     const handleSubmit = async () => {
@@ -74,7 +96,11 @@ const AdminUnitsPage = () => {
 
         if (editingUnit) {
             updateMutation.mutate({ id: editingUnit.id, ...payload }, {
-                onSuccess: () => setIsModalOpen(false),
+                onSuccess: () => {
+                    // Also save petugas assignments
+                    saveAssignmentsMutation.mutate({ unitId: editingUnit.id, userIds: assignedPetugas });
+                    setIsModalOpen(false);
+                },
                 onError: (err) => alert('Gagal: ' + err.message),
             });
         } else {
@@ -290,6 +316,32 @@ const AdminUnitsPage = () => {
                                                 className="mt-1 block w-full rounded-md border-0 py-2.5 text-slate-900 shadow-sm ring-1 ring-inset ring-slate-300 placeholder:text-slate-400 focus:ring-2 focus:ring-inset focus:ring-primary sm:text-sm" placeholder="1" type="number" min="1" />
                                         </div>
                                     </div>
+                                    {/* Petugas Assignment (only on edit) */}
+                                    {editingUnit && petugasList.length > 0 && (
+                                        <div>
+                                            <label className="block text-sm font-medium leading-6 text-slate-900 mb-2">Assign Petugas</label>
+                                            <div className="space-y-2 max-h-40 overflow-y-auto rounded-lg border border-slate-200 p-3 bg-slate-50">
+                                                {petugasList.map((p) => (
+                                                    <label key={p.id} className="flex items-center gap-3 cursor-pointer hover:bg-white rounded-md px-2 py-1 transition-colors">
+                                                        <input
+                                                            type="checkbox"
+                                                            checked={assignedPetugas.includes(p.id)}
+                                                            onChange={(e) => {
+                                                                if (e.target.checked) setAssignedPetugas(prev => [...prev, p.id]);
+                                                                else setAssignedPetugas(prev => prev.filter(id => id !== p.id));
+                                                            }}
+                                                            className="h-4 w-4 rounded border-slate-300 text-primary focus:ring-primary"
+                                                        />
+                                                        <div className="flex flex-col">
+                                                            <span className="text-sm font-medium text-slate-900">{p.name}</span>
+                                                            <span className="text-xs text-slate-500">{p.email}</span>
+                                                        </div>
+                                                    </label>
+                                                ))}
+                                            </div>
+                                            <p className="text-xs text-slate-400 mt-1">Pilih petugas yang dapat mengelola unit ini.</p>
+                                        </div>
+                                    )}
                                 </div>
                             </div>
                             <div className="bg-slate-50 px-4 py-4 sm:flex sm:flex-row-reverse sm:px-6 border-t border-slate-100">

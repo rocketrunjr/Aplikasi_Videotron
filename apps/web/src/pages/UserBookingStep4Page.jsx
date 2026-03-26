@@ -42,6 +42,7 @@ const UserBookingStep4Page = () => {
 
     const [paymentFileName, setPaymentFileName] = useState('');
     const [paymentFile, setPaymentFile] = useState(null);
+    const [paymentPreview, setPaymentPreview] = useState(null);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [voucherCode, setVoucherCode] = useState('');
     const [submitError, setSubmitError] = useState('');
@@ -102,8 +103,15 @@ const UserBookingStep4Page = () => {
 
     const handleFileChange = (e) => {
         if (e.target.files && e.target.files.length > 0) {
-            setPaymentFileName(e.target.files[0].name);
-            setPaymentFile(e.target.files[0]);
+            const file = e.target.files[0];
+            setPaymentFileName(file.name);
+            setPaymentFile(file);
+            // Create preview for images
+            if (file.type.startsWith('image/')) {
+                setPaymentPreview(URL.createObjectURL(file));
+            } else {
+                setPaymentPreview(null);
+            }
         }
     };
 
@@ -221,6 +229,10 @@ const UserBookingStep4Page = () => {
                                                             <span className="material-symbols-outlined text-lg">content_copy</span>
                                                         </button>
                                                     </div>
+                                                    <p className="text-xs text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2 mt-2 leading-relaxed">
+                                                        <span className="material-symbols-outlined text-sm align-middle mr-1">info</span>
+                                                        <strong>Tuliskan judul deskripsi / keterangan saat transfer:</strong> {unit?.name || 'Nama Videotron'}
+                                                    </p>
                                                 </div>
                                                 <div>
                                                     <p className="text-xs text-slate-500 mb-1">Nama Pemilik Rekening</p>
@@ -259,6 +271,12 @@ const UserBookingStep4Page = () => {
                                     <input type="file" className="hidden" onChange={handleFileChange} accept="image/jpeg, image/png, application/pdf" />
                                 </label>
                             </div>
+                            {/* Image Preview */}
+                            {paymentPreview && (
+                                <div className="mt-4 rounded-xl border border-slate-200 overflow-hidden">
+                                    <img src={paymentPreview} alt="Preview bukti transfer" className="w-full max-h-64 object-contain bg-slate-50" />
+                                </div>
+                            )}
                         </div>
                     </div>
 

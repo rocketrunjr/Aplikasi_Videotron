@@ -127,6 +127,7 @@ const AdminUsersPage = () => {
                         <option value="">Semua Role</option>
                         <option value="user">User</option>
                         <option value="admin">Admin</option>
+                        <option value="petugas">Petugas</option>
                     </select>
                 </div>
                 <div className="md:col-span-2">
@@ -184,8 +185,8 @@ const AdminUsersPage = () => {
                                         </td>
                                         <td className="px-6 py-4 text-slate-500">{u.email}</td>
                                         <td className="px-6 py-4 text-center">
-                                            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${u.role === 'admin' ? 'bg-red-100 text-red-800' : 'bg-slate-100 text-slate-700'}`}>
-                                                {u.role === 'admin' ? 'Admin' : 'User'}
+                                            <span className={`inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium ${u.role === 'admin' ? 'bg-red-100 text-red-800' : u.role === 'petugas' ? 'bg-indigo-100 text-indigo-800' : 'bg-slate-100 text-slate-700'}`}>
+                                                {u.role === 'admin' ? 'Admin' : u.role === 'petugas' ? 'Petugas' : 'User'}
                                             </span>
                                         </td>
                                         <td className="px-6 py-4 text-center">
@@ -281,6 +282,7 @@ const AdminUsersPage = () => {
                                 <select value={editForm.role} onChange={(e) => setEditForm(p => ({ ...p, role: e.target.value }))}
                                     className="block w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-primary">
                                     <option value="user">User</option>
+                                    <option value="petugas">Petugas</option>
                                     <option value="admin">Admin</option>
                                 </select>
                             </div>

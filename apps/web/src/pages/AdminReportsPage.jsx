@@ -44,12 +44,23 @@ const AdminReportsPage = () => {
     const summary = summaryData?.data || summaryData || {};
     const ordersList = Array.isArray(ordersData?.data) ? ordersData.data : Array.isArray(ordersData) ? ordersData : [];
 
+    const formatDateID = (d) => d ? new Date(d).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '-';
+
+    const formatSchedule = (row) => {
+        if (row.minDate && row.maxDate) {
+            return `${formatDateID(row.minDate)} - ${formatDateID(row.maxDate)}`;
+        }
+        return '-';
+    };
+
     const getExportRows = () => {
         return ordersList.map((row, idx) => ({
             no: idx + 1,
             tanggal: row.createdAt ? new Date(row.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'long', year: 'numeric' }) : '-',
             namaPemesan: row.userName || '-',
             unitVideotron: row.unitName || '-',
+            jadwalTayang: formatSchedule(row),
+            kodeVoucher: row.voucherCode || '-',
             totalHarga: row.totalAmount || 0,
             status: statusLabel(row.status),
         }));
@@ -74,16 +85,17 @@ const AdminReportsPage = () => {
                     ['Laporan Pesanan Videotron'],
                     [`Periode: ${dateLabel}`],
                     [],
-                    ['No', 'Tanggal Pesanan', 'Nama Pemesan', 'Unit Videotron', 'Total Harga', 'Status'],
-                    ...rows.map(r => [r.no, r.tanggal, r.namaPemesan, r.unitVideotron, r.totalHarga, r.status]),
+                    ['No', 'Tanggal Pesanan', 'Nama Pemesan', 'Unit Videotron', 'Jadwal Tayang', 'Kode Voucher', 'Total Harga', 'Status'],
+                    ...rows.map(r => [r.no, r.tanggal, r.namaPemesan, r.unitVideotron, r.jadwalTayang, r.kodeVoucher, r.totalHarga, r.status]),
                 ];
                 const ws = XLSX.utils.aoa_to_sheet(wsData);
-                // Set column widths
                 ws['!cols'] = [
                     { wch: 5 },   // No
                     { wch: 22 },  // Tanggal
                     { wch: 25 },  // Nama
                     { wch: 25 },  // Unit
+                    { wch: 30 },  // Jadwal Tayang
+                    { wch: 15 },  // Kode Voucher
                     { wch: 18 },  // Harga
                     { wch: 15 },  // Status
                 ];
@@ -101,15 +113,15 @@ const AdminReportsPage = () => {
 
                 autoTable(doc, {
                     startY: 34,
-                    head: [['No', 'Tanggal Pesanan', 'Nama Pemesan', 'Unit Videotron', 'Total Harga', 'Status']],
-                    body: rows.map(r => [r.no, r.tanggal, r.namaPemesan, r.unitVideotron, formatCurrency(r.totalHarga), r.status]),
-                    styles: { fontSize: 9, cellPadding: 3 },
+                    head: [['No', 'Tanggal Pesanan', 'Nama Pemesan', 'Unit Videotron', 'Jadwal Tayang', 'Kode Voucher', 'Total Harga', 'Status']],
+                    body: rows.map(r => [r.no, r.tanggal, r.namaPemesan, r.unitVideotron, r.jadwalTayang, r.kodeVoucher, formatCurrency(r.totalHarga), r.status]),
+                    styles: { fontSize: 8, cellPadding: 3 },
                     headStyles: { fillColor: [41, 128, 185], textColor: 255, fontStyle: 'bold' },
                     alternateRowStyles: { fillColor: [245, 247, 250] },
                     columnStyles: {
-                        0: { halign: 'center', cellWidth: 12 },
-                        4: { halign: 'right' },
-                        5: { halign: 'center' },
+                        0: { halign: 'center', cellWidth: 10 },
+                        6: { halign: 'right' },
+                        7: { halign: 'center' },
                     },
                 });
 
@@ -195,15 +207,17 @@ const AdminReportsPage = () => {
                                 <th className="px-6 py-2.5 font-medium">Tanggal Pesanan</th>
                                 <th className="px-6 py-2.5 font-medium">Nama Pemesan</th>
                                 <th className="px-6 py-2.5 font-medium">Unit Videotron</th>
+                                <th className="px-6 py-2.5 font-medium">Jadwal Tayang</th>
+                                <th className="px-6 py-2.5 font-medium">Kode Voucher</th>
                                 <th className="px-6 py-2.5 font-medium text-right">Total Harga</th>
                                 <th className="px-6 py-2.5 font-medium text-center">Status</th>
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-slate-200">
                             {ordersLoading ? (
-                                <tr><td colSpan={6} className="px-6 py-8 text-center text-slate-400">Memuat data...</td></tr>
+                                <tr><td colSpan={8} className="px-6 py-8 text-center text-slate-400">Memuat data...</td></tr>
                             ) : ordersList.length === 0 ? (
-                                <tr><td colSpan={6} className="px-6 py-8 text-center text-slate-400">Belum ada data pesanan</td></tr>
+                                <tr><td colSpan={8} className="px-6 py-8 text-center text-slate-400">Belum ada data pesanan</td></tr>
                             ) : (
                                 ordersList.map((row, idx) => {
                                     const st = statusMap[row.status] || { label: row.status, color: 'bg-slate-100 text-slate-600' };
@@ -213,6 +227,8 @@ const AdminReportsPage = () => {
                                             <td className="px-6 py-2.5 text-slate-700">{row.createdAt ? new Date(row.createdAt).toLocaleDateString('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }) : '-'}</td>
                                             <td className="px-6 py-2.5 font-medium text-slate-900">{row.userName || '-'}</td>
                                             <td className="px-6 py-2.5 text-slate-700">{row.unitName || '-'}</td>
+                                            <td className="px-6 py-2.5 text-slate-700">{formatSchedule(row)}</td>
+                                            <td className="px-6 py-2.5 font-mono text-xs text-slate-600">{row.voucherCode || '-'}</td>
                                             <td className="px-6 py-2.5 text-right font-medium text-slate-900">{formatCurrency(row.totalAmount)}</td>
                                             <td className="px-6 py-2.5 text-center">
                                                 <span className={`inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold uppercase tracking-wide ${st.color}`}>

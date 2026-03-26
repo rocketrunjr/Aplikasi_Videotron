@@ -1,6 +1,6 @@
 import { BrowserRouter, Routes, Route } from 'react-router-dom';
 import ErrorBoundary from './components/ErrorBoundary';
-import { RequireAuth, RequireAdmin, RedirectIfAuth } from './components/AuthGuards';
+import { RequireAuth, RequireAdmin, RequirePetugas, RedirectIfAuth } from './components/AuthGuards';
 import LandingPage from './pages/LandingPage';
 import LoginPage from './pages/LoginPage';
 import RegisterPage from './pages/RegisterPage';
@@ -16,6 +16,11 @@ import AdminReportsPage from './pages/AdminReportsPage';
 import AdminVouchersPage from './pages/AdminVouchersPage';
 import AdminProfilePage from './pages/AdminProfilePage';
 import AdminCMSPage from './pages/AdminCMSPage';
+import PetugasDashboardPage from './pages/PetugasDashboardPage';
+import PetugasOrdersPage from './pages/PetugasOrdersPage';
+import PetugasReportsPage from './pages/PetugasReportsPage';
+import PetugasVouchersPage from './pages/PetugasVouchersPage';
+import PetugasProfilePage from './pages/PetugasProfilePage';
 import UserDashboardPage from './pages/UserDashboardPage';
 import UserBookingStep1Page from './pages/UserBookingStep1Page';
 import UserBookingStep2Page from './pages/UserBookingStep2Page';
@@ -48,6 +53,13 @@ function App() {
           <Route path="/admin/voucher" element={<RequireAdmin><AdminVouchersPage /></RequireAdmin>} />
           <Route path="/admin/profil" element={<RequireAdmin><AdminProfilePage /></RequireAdmin>} />
           <Route path="/admin/cms" element={<RequireAdmin><AdminCMSPage /></RequireAdmin>} />
+
+          {/* Petugas Routes — require petugas role */}
+          <Route path="/petugas" element={<RequirePetugas><PetugasDashboardPage /></RequirePetugas>} />
+          <Route path="/petugas/pesanan" element={<RequirePetugas><PetugasOrdersPage /></RequirePetugas>} />
+          <Route path="/petugas/laporan" element={<RequirePetugas><PetugasReportsPage /></RequirePetugas>} />
+          <Route path="/petugas/voucher" element={<RequirePetugas><PetugasVouchersPage /></RequirePetugas>} />
+          <Route path="/petugas/profil" element={<RequirePetugas><PetugasProfilePage /></RequirePetugas>} />
 
           {/* User Routes — require authentication */}
           <Route path="/user/dashboard" element={<RequireAuth><UserDashboardPage /></RequireAuth>} />
