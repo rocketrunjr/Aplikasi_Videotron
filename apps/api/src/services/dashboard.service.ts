@@ -131,47 +131,54 @@ export async function getUserRecentOrders(userId: string, limit: number = 5) {
 // ─── Revenue Chart ──────────────────────────────────────────────────────────
 
 export async function getRevenueChart(period: string = "monthly") {
-    const paidStatuses = "('sudah_bayar', 'tayang', 'selesai')";
-
     if (period === "weekly") {
         // Last 8 weeks
-        const result = await db.execute(sql`
-            SELECT
-                TO_CHAR(DATE_TRUNC('week', ${orders.createdAt}), 'DD Mon') AS label,
-                COALESCE(SUM(${orders.totalAmount}), 0)::int AS revenue
-            FROM ${orders}
-            WHERE ${orders.status} IN ('sudah_bayar', 'tayang', 'selesai')
-            AND ${orders.createdAt} >= NOW() - INTERVAL '8 weeks'
-            GROUP BY DATE_TRUNC('week', ${orders.createdAt})
-            ORDER BY DATE_TRUNC('week', ${orders.createdAt})
-        `);
-        return result.rows || result;
+        return await db
+            .select({
+                label: sql<string>`strftime('%Y-%W', ${orders.createdAt})`,
+                revenue: sql<number>`COALESCE(SUM(${orders.totalAmount}), 0)`
+            })
+            .from(orders)
+            .where(
+                and(
+                    sql`${orders.status} IN ('sudah_bayar', 'tayang', 'selesai')`,
+                    sql`${orders.createdAt} >= date('now', '-8 weeks')`
+                )
+            )
+            .groupBy(sql`strftime('%Y-%W', ${orders.createdAt})`)
+            .orderBy(sql`strftime('%Y-%W', ${orders.createdAt})`);
     } else if (period === "yearly") {
         // Last 5 years
-        const result = await db.execute(sql`
-            SELECT
-                TO_CHAR(DATE_TRUNC('year', ${orders.createdAt}), 'YYYY') AS label,
-                COALESCE(SUM(${orders.totalAmount}), 0)::int AS revenue
-            FROM ${orders}
-            WHERE ${orders.status} IN ('sudah_bayar', 'tayang', 'selesai')
-            AND ${orders.createdAt} >= NOW() - INTERVAL '5 years'
-            GROUP BY DATE_TRUNC('year', ${orders.createdAt})
-            ORDER BY DATE_TRUNC('year', ${orders.createdAt})
-        `);
-        return result.rows || result;
+        return await db
+            .select({
+                label: sql<string>`strftime('%Y', ${orders.createdAt})`,
+                revenue: sql<number>`COALESCE(SUM(${orders.totalAmount}), 0)`
+            })
+            .from(orders)
+            .where(
+                and(
+                    sql`${orders.status} IN ('sudah_bayar', 'tayang', 'selesai')`,
+                    sql`${orders.createdAt} >= date('now', '-5 years')`
+                )
+            )
+            .groupBy(sql`strftime('%Y', ${orders.createdAt})`)
+            .orderBy(sql`strftime('%Y', ${orders.createdAt})`);
     } else {
         // Monthly (default) — last 12 months
-        const result = await db.execute(sql`
-            SELECT
-                TO_CHAR(DATE_TRUNC('month', ${orders.createdAt}), 'Mon YYYY') AS label,
-                COALESCE(SUM(${orders.totalAmount}), 0)::int AS revenue
-            FROM ${orders}
-            WHERE ${orders.status} IN ('sudah_bayar', 'tayang', 'selesai')
-            AND ${orders.createdAt} >= NOW() - INTERVAL '12 months'
-            GROUP BY DATE_TRUNC('month', ${orders.createdAt})
-            ORDER BY DATE_TRUNC('month', ${orders.createdAt})
-        `);
-        return result.rows || result;
+        return await db
+            .select({
+                label: sql<string>`strftime('%Y-%m', ${orders.createdAt})`,
+                revenue: sql<number>`COALESCE(SUM(${orders.totalAmount}), 0)`
+            })
+            .from(orders)
+            .where(
+                and(
+                    sql`${orders.status} IN ('sudah_bayar', 'tayang', 'selesai')`,
+                    sql`${orders.createdAt} >= date('now', '-12 months')`
+                )
+            )
+            .groupBy(sql`strftime('%Y-%m', ${orders.createdAt})`)
+            .orderBy(sql`strftime('%Y-%m', ${orders.createdAt})`);
     }
 }
 
