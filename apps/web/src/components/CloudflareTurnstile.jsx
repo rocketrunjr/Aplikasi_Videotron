@@ -22,7 +22,7 @@ const CloudflareTurnstile = ({ siteKey, onVerify, onExpire, theme = 'auto' }) =>
     }, [onVerify, onExpire]);
 
     const renderWidget = useCallback(() => {
-        if (!containerRef.current || !window.turnstile) return;
+        if (!containerRef.current || !window.turnstile || !siteKey) return;
         // Clean up previous widget
         if (widgetIdRef.current !== null) {
             try { window.turnstile.remove(widgetIdRef.current); } catch { /* cleanup */ }
@@ -36,6 +36,13 @@ const CloudflareTurnstile = ({ siteKey, onVerify, onExpire, theme = 'auto' }) =>
     }, [siteKey, theme]);
 
     useEffect(() => {
+        // If no siteKey, auto-verify in dev/fallback mode
+        if (!siteKey) {
+            console.warn('[Turnstile] No siteKey provided, auto-verifying (dev mode)');
+            onVerifyRef.current?.('dev-mode-no-captcha');
+            return;
+        }
+
         // Check if script already loaded
         if (window.turnstile) {
             return;
@@ -53,11 +60,11 @@ const CloudflareTurnstile = ({ siteKey, onVerify, onExpire, theme = 'auto' }) =>
         script.async = true;
         script.onload = () => setLoaded(true);
         document.head.appendChild(script);
-    }, []);
+    }, [siteKey]);
 
     useEffect(() => {
-        if (loaded) renderWidget();
-    }, [loaded, renderWidget]);
+        if (loaded && siteKey) renderWidget();
+    }, [loaded, siteKey, renderWidget]);
 
     useEffect(() => {
         return () => {
@@ -66,6 +73,10 @@ const CloudflareTurnstile = ({ siteKey, onVerify, onExpire, theme = 'auto' }) =>
             }
         };
     }, []);
+
+    if (!siteKey) {
+        return <div className="text-xs text-amber-500 p-2">⚠️ Captcha tidak tersedia</div>;
+    }
 
     return <div ref={containerRef} className="cf-turnstile" />;
 };
