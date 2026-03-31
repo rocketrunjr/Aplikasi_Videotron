@@ -4,8 +4,9 @@ import "dotenv/config";
 export default defineConfig({
     schema: "./src/db/schema.ts",
     out: "./src/db/migrations",
-    dialect: "sqlite",
+    dialect: "turso",
     dbCredentials: {
         url: process.env.DATABASE_URL!,
+        authToken: process.env.DATABASE_AUTH_TOKEN,
     },
 });
