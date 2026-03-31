@@ -13,8 +13,8 @@
         "db:studio": "drizzle-kit studio"
     },
     "dependencies": {
+        "@libsql/client": "^0.17.2",
         "better-auth": "^1.2.0",
-        "better-sqlite3": "^12.8.0",
         "cors": "^2.8.5",
         "dotenv": "^16.4.7",
         "drizzle-orm": "^0.41.0",
@@ -23,7 +23,6 @@
         "uuid": "^11.0.5"
     },
     "devDependencies": {
-        "@types/better-sqlite3": "^7.6.13",
         "@types/cors": "^2.8.17",
         "@types/express": "^5.0.0",
         "@types/multer": "^1.4.12",
