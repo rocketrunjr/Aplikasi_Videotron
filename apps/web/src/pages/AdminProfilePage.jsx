@@ -210,7 +210,7 @@ const AdminProfilePage = () => {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-semibold text-slate-700">No. WhatsApp</label>
+                                <label className="text-sm font-semibold text-slate-700">No Telegram</label>
                                 <input
                                     name="phone"
                                     value={formData.phone}
@@ -220,7 +220,7 @@ const AdminProfilePage = () => {
                                 />
                             </div>
                             <div className="space-y-2">
-                                <label className="text-sm font-semibold text-slate-700">Perusahaan</label>
+                                <label className="text-sm font-semibold text-slate-700">Nama OPD</label>
                                 <input
                                     name="company"
                                     value={formData.company}

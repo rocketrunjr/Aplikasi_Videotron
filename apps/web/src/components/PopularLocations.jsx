@@ -109,8 +109,8 @@ const PopularLocations = () => {
                                     <p className="text-sm text-gray-500 dark:text-gray-400 mb-1 flex items-center gap-1">
                                         <span className="material-symbols-outlined text-[16px]">location_on</span> {loc.location}
                                     </p>
-                                    <p className="text-xs text-gray-400 mb-4 flex items-center gap-1">
-                                        <span className="material-symbols-outlined text-[14px]">aspect_ratio</span> {loc.size} • {loc.type === 'outdoor' ? 'Outdoor' : 'Indoor'}
+                                    <p className="text-[12px] text-gray-400 mb-4 flex items-center gap-1">
+                                        <span className="material-symbols-outlined text-[12px]">aspect_ratio</span> {loc.size} • {loc.type === 'outdoor' ? 'Outdoor' : 'Indoor'}
                                     </p>
                                     <div className="mt-auto pt-4 border-t border-gray-200 dark:border-gray-700 flex items-center justify-between">
                                         <div>

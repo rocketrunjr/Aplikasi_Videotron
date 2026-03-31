@@ -84,7 +84,7 @@ const AdminUsersPage = () => {
         setEditForm({
             name: u.name || '',
             role: u.role || 'user',
-            phone: u.phone || '',
+            telegramChatId: u.telegramChatId || '',
             company: u.company || '',
             accountType: u.accountType || 'pribadi',
         });
@@ -158,8 +158,8 @@ const AdminUsersPage = () => {
                                 <th className="px-6 py-4 font-medium">Email</th>
                                 <th className="px-6 py-4 font-medium text-center">Role</th>
                                 <th className="px-6 py-4 font-medium text-center">Tipe</th>
-                                <th className="px-6 py-4 font-medium">No. HP</th>
-                                <th className="px-6 py-4 font-medium">Perusahaan</th>
+                                <th className="px-6 py-4 font-medium">No Telegram</th>
+                                <th className="px-6 py-4 font-medium">Nama OPD</th>
                                 <th className="px-6 py-4 font-medium text-center">Status</th>
                                 <th className="px-6 py-4 font-medium text-center">Aksi</th>
                             </tr>
@@ -194,7 +194,7 @@ const AdminUsersPage = () => {
                                                 {u.accountType?.charAt(0).toUpperCase() + u.accountType?.slice(1) || 'Pribadi'}
                                             </span>
                                         </td>
-                                        <td className="px-6 py-4 text-slate-500 font-mono text-xs">{u.phone || '-'}</td>
+                                        <td className="px-6 py-4 text-slate-500 font-mono text-xs">{u.telegramChatId || '-'}</td>
                                         <td className="px-6 py-4">{u.company || <span className="text-slate-400 italic">-</span>}</td>
                                         <td className="px-6 py-4 text-center">
                                             <span className={`inline-flex rounded-full px-2.5 py-0.5 text-xs font-medium ${isBanned ? 'bg-red-100 text-red-800' : 'bg-emerald-100 text-emerald-800'}`}>
@@ -296,12 +296,12 @@ const AdminUsersPage = () => {
                                 </select>
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">No. HP</label>
-                                <input type="text" value={editForm.phone} onChange={(e) => setEditForm(p => ({ ...p, phone: e.target.value }))}
+                                <label className="block text-sm font-medium text-slate-700 mb-1">No Telegram</label>
+                                <input type="text" value={editForm.telegramChatId} onChange={(e) => setEditForm(p => ({ ...p, telegramChatId: e.target.value }))}
                                     className="block w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-primary" />
                             </div>
                             <div>
-                                <label className="block text-sm font-medium text-slate-700 mb-1">Perusahaan</label>
+                                <label className="block text-sm font-medium text-slate-700 mb-1">Nama OPD</label>
                                 <input type="text" value={editForm.company} onChange={(e) => setEditForm(p => ({ ...p, company: e.target.value }))}
                                     className="block w-full rounded-lg border border-slate-300 px-3 py-2.5 text-sm focus:ring-2 focus:ring-primary focus:border-primary" />
                             </div>

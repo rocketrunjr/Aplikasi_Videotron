@@ -16,7 +16,7 @@ const formatCurrencyShort = (amount) => {
 const statusMap = {
     pending: { label: 'Pending', color: 'bg-slate-100 text-slate-600' },
     menunggu_verifikasi: { label: 'Verifikasi', color: 'bg-orange-100 text-orange-800' },
-    sudah_bayar: { label: 'Sudah Bayar', color: 'bg-emerald-100 text-emerald-800' },
+    sudah_bayar: { label: 'Sudah Bayar', color: 'bg-purple-100 text-purple-800' },
     tayang: { label: 'Tayang', color: 'bg-blue-100 text-blue-800' },
     selesai: { label: 'Selesai', color: 'bg-emerald-100 text-emerald-800' },
     ditolak: { label: 'Ditolak', color: 'bg-red-100 text-red-800' },

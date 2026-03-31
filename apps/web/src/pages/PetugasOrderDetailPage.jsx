@@ -1,7 +1,9 @@
 import React, { useState, useRef } from 'react';
 import { Link, useParams } from 'react-router-dom';
-import AdminLayout from '../components/AdminLayout';
-import { useAdminOrderDetail, useUpdateOrderStatus, useUploadInvoice, useUploadBroadcastProof } from '../hooks/useAdmin';
+import PetugasLayout from '../components/PetugasLayout';
+import { useQuery } from '@tanstack/react-query';
+import { apiClient } from '../lib/api-client';
+import { useUpdatePetugasOrderStatus, useUploadPetugasBroadcastProof, useUploadPetugasInvoice } from '../hooks/usePetugas';
 import { useUploadFile } from '../hooks/useUploads';
 
 const formatCurrency = (amount) => {
@@ -26,23 +28,28 @@ const statusMap = {
     dibatalkan: { label: 'Dibatalkan', color: 'bg-slate-100 text-slate-600' },
 };
 
-const AdminOrderDetailPage = () => {
+const PetugasOrderDetailPage = () => {
     const { id } = useParams();
-    const { data: orderData, isLoading } = useAdminOrderDetail(id);
-    const updateStatusMutation = useUpdateOrderStatus();
-    const uploadInvoiceMutation = useUploadInvoice();
-    const uploadBroadcastMutation = useUploadBroadcastProof();
+    const updateStatusMutation = useUpdatePetugasOrderStatus();
+    const uploadBroadcastMutation = useUploadPetugasBroadcastProof();
+    const uploadInvoiceMutation = useUploadPetugasInvoice();
     const uploadFileMutation = useUploadFile();
-    const invoiceInputRef = useRef(null);
 
     const [successMsg, setSuccessMsg] = useState('');
+    const invoiceInputRef = useRef(null);
+    
+    const { data: orderData, isLoading } = useQuery({
+        queryKey: ['petugas', 'orders', id],
+        queryFn: async () => {
+            const res = await apiClient.get(`/api/petugas/orders/${id}`);
+            return res.data;
+        },
+        enabled: !!id
+    });
 
-    const detail = orderData?.data || orderData;
-    const order = detail?.order;
-    const unit = detail?.unit;
-    const usr = detail?.user;
-    const dates = detail?.dates || [];
-    const proofs = detail?.proofs || [];
+    const order = orderData;
+    const dates = orderData?.dates || [];
+    const proofs = orderData?.broadcastProofs || [];
 
     const st = order ? (statusMap[order.status] || { label: order.status, color: 'bg-slate-100 text-slate-600' }) : {};
 
@@ -52,6 +59,9 @@ const AdminOrderDetailPage = () => {
                 setSuccessMsg(`Status berhasil diubah ke "${statusMap[newStatus]?.label || newStatus}"`);
                 setTimeout(() => setSuccessMsg(''), 3000);
             },
+            onError: (err) => {
+                alert('Gagal mengubah status: ' + (err.response?.data?.error || err.message));
+            }
         });
     };
 
@@ -83,13 +93,13 @@ const AdminOrderDetailPage = () => {
                 setTimeout(() => setSuccessMsg(''), 3000);
             }
         } catch (err) {
-            alert('Gagal upload foto: ' + (err.message || 'Unknown error'));
+            alert('Gagal upload foto: ' + (err.response?.data?.error || err.message || 'Unknown error'));
         }
     };
 
     const breadcrumbTitle = (
         <>
-            <Link className="hover:text-primary transition-colors text-slate-500 font-normal" to="/admin/pesanan">Pesanan</Link>
+            <Link className="hover:text-primary transition-colors text-slate-500 font-normal" to="/petugas/pesanan">Pesanan</Link>
             <span className="material-symbols-outlined text-xs text-slate-500">chevron_right</span>
             <span className="font-medium text-slate-900">Detail #{order?.orderNumber || id?.slice(0, 8)}</span>
         </>
@@ -97,25 +107,25 @@ const AdminOrderDetailPage = () => {
 
     if (isLoading) {
         return (
-            <AdminLayout title="Detail Pesanan">
+            <PetugasLayout title="Detail Pesanan">
                 <div className="flex items-center justify-center py-20 text-slate-400">
                     <span className="material-symbols-outlined text-3xl animate-spin mr-3">progress_activity</span>
                     Memuat data pesanan...
                 </div>
-            </AdminLayout>
+            </PetugasLayout>
         );
     }
 
     if (!order) {
         return (
-            <AdminLayout title="Detail Pesanan">
+            <PetugasLayout title="Detail Pesanan">
                 <div className="text-center py-20 text-slate-400">Pesanan tidak ditemukan.</div>
-            </AdminLayout>
+            </PetugasLayout>
         );
     }
 
     return (
-        <AdminLayout title={breadcrumbTitle}>
+        <PetugasLayout title={breadcrumbTitle}>
             {successMsg && (
                 <div className="mb-4 rounded-lg bg-emerald-50 border border-emerald-200 p-3 text-sm text-emerald-700 flex items-center gap-2">
                     <span className="material-symbols-outlined text-lg">check_circle</span>
@@ -131,10 +141,10 @@ const AdminOrderDetailPage = () => {
                             {st.label}
                         </span>
                     </div>
-                    <p className="text-slate-500 mt-1">Dipesan oleh <span className="font-medium text-slate-700">{usr?.name || '-'}</span> pada {formatDate(order.createdAt)}</p>
+                    <p className="text-slate-500 mt-1">Dipesan oleh <span className="font-medium text-slate-700">{order?.userName || '-'}</span> pada {formatDate(order.createdAt)}</p>
                 </div>
                 <div className="flex gap-2">
-                    <Link to="/admin/pesanan" className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
+                    <Link to="/petugas/pesanan" className="flex items-center gap-2 rounded-lg border border-slate-300 bg-white px-4 py-2 text-sm font-medium text-slate-700 hover:bg-slate-50 transition-colors">
                         <span className="material-symbols-outlined text-lg">arrow_back</span>
                         Kembali
                     </Link>
@@ -156,8 +166,8 @@ const AdminOrderDetailPage = () => {
                                         <span className="material-symbols-outlined">location_on</span>
                                     </div>
                                     <div>
-                                        <p className="font-medium text-slate-900">{unit?.name || '-'}</p>
-                                        <p className="text-sm text-slate-500">{unit?.location || '-'}, {unit?.city || ''}</p>
+                                        <p className="font-medium text-slate-900">{order?.unitName || '-'}</p>
+                                        <p className="text-sm text-slate-500">{order?.unitLocation || '-'}</p>
                                     </div>
                                 </div>
                             </div>
@@ -271,7 +281,6 @@ const AdminOrderDetailPage = () => {
                     <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
                         <div className="border-b border-slate-200 px-6 py-4 flex items-center justify-between">
                             <h3 className="text-lg font-semibold text-slate-900">Dokumen Invoice</h3>
-                            <span className="inline-flex items-center rounded-full bg-slate-100 px-2.5 py-0.5 text-xs font-medium text-slate-600">Wajib</span>
                         </div>
                         <div className="p-6">
                             {order.invoiceFileUrl ? (
@@ -304,7 +313,7 @@ const AdminOrderDetailPage = () => {
                         </div>
                     </div>
 
-                    {/* Bukti Penayangan */}
+                    {/* Bukti Penayangan (Upload) */}
                     <div className="rounded-xl border border-slate-200 bg-white shadow-sm">
                         <div className="border-b border-slate-200 px-6 py-4 flex items-center justify-between">
                             <div className="flex items-center gap-2">
@@ -345,7 +354,7 @@ const AdminOrderDetailPage = () => {
                                                     <p className="mt-2 text-xs font-medium text-slate-600 text-center">Upload Foto Tayangan</p>
                                                 </div>
                                             </div>
-                                            {d !== dates[dates.length - 1] && <div className="h-px bg-slate-100 w-full"></div>}
+                                            {d !== dates[dates.length - 1] && <div className="h-px bg-slate-100 w-full mt-2"></div>}
                                         </div>
                                     );
                                 })}
@@ -354,8 +363,8 @@ const AdminOrderDetailPage = () => {
                     </div>
                 </div>
             </div>
-        </AdminLayout>
+        </PetugasLayout>
     );
 };
 
-export default AdminOrderDetailPage;
+export default PetugasOrderDetailPage;

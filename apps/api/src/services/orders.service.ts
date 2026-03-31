@@ -5,9 +5,11 @@ import {
     broadcastProofs,
     videotronUnits,
     user,
+    petugasAssignments, // Added here
 } from "../db/schema.js";
 import { eq, and, ilike, or, sql, count, desc } from "drizzle-orm";
 import { generateOrderNumber } from "../utils/generate-order-number.js";
+import { sendTelegramMessage } from "./telegram.service.js"; // Added Telegram Service
 
 // ─── User-facing ─────────────────────────────────────────────────────────────
 
@@ -57,48 +59,90 @@ export async function createOrder(data: {
     }
     const totalAmount = subtotal - discountAmount;
 
-    // Create order + order_dates in a transaction
-    const result = await db.transaction(async (tx) => {
-        const [order] = await tx
-            .insert(orders)
-            .values({
-                orderNumber,
-                userId: data.userId,
-                unitId: data.unitId,
-                status: initialStatus,
-                materialFileUrl: data.materialFileUrl || null,
-                materialDriveLink: data.materialDriveLink || null,
-                paymentProofUrl: data.paymentProofUrl || null,
-                voucherCode: data.voucherCode || null,
-                discountAmount,
-                subtotal,
-                totalAmount,
+    // Create order + order_dates
+    const [order] = await db
+        .insert(orders)
+        .values({
+            orderNumber,
+            userId: data.userId,
+            unitId: data.unitId,
+            status: initialStatus,
+            materialFileUrl: data.materialFileUrl || null,
+            materialDriveLink: data.materialDriveLink || null,
+            paymentProofUrl: data.paymentProofUrl || null,
+            voucherCode: data.voucherCode || null,
+            discountAmount,
+            subtotal,
+            totalAmount,
+        })
+        .returning();
+
+    // Insert individual dates
+    const dateValues = data.dates.map((date) => ({
+        orderId: order.id,
+        date,
+        price: unit.pricePerDay,
+    }));
+
+    await db.insert(orderDates).values(dateValues);
+
+    // Increment voucher usage if a voucher was used
+    if (data.voucherCode) {
+        const { vouchers } = await import("../db/schema.js");
+        await db
+            .update(vouchers)
+            .set({
+                usedCount: sql`${vouchers.usedCount} + 1`,
+                updatedAt: new Date(),
             })
-            .returning();
+            .where(eq(vouchers.code, data.voucherCode.toUpperCase()));
+    }
 
-        // Insert individual dates
-        const dateValues = data.dates.map((date) => ({
-            orderId: order.id,
-            date,
-            price: unit.pricePerDay,
-        }));
+    const result = order;
 
-        await tx.insert(orderDates).values(dateValues);
-
-        // Increment voucher usage if a voucher was used
-        if (data.voucherCode) {
-            const { vouchers } = await import("../db/schema.js");
-            await tx
-                .update(vouchers)
-                .set({
-                    usedCount: sql`${vouchers.usedCount} + 1`,
-                    updatedAt: new Date(),
+    // Trigger Telegram notification asynchronously for assigned Petugas
+    
+    setTimeout(async () => {
+        try {
+            // Find Petugas assigned to this unit
+            const assignments = await db
+                .select({
+                    petugasName: user.name,
+                    telegramChatId: user.telegramChatId,
                 })
-                .where(eq(vouchers.code, data.voucherCode.toUpperCase()));
-        }
+                .from(petugasAssignments)
+                .innerJoin(user, eq(petugasAssignments.userId, user.id))
+                .where(eq(petugasAssignments.unitId, data.unitId));
 
-        return order;
-    });
+            if (assignments.length > 0) {
+                // Fetch user data who ordered
+                const [buyer] = await db.select({ name: user.name }).from(user).where(eq(user.id, data.userId)).limit(1);
+                
+                const messageText = `
+<b>🚀 Pesanan Baru Masuk!</b>
+
+Unit: <b>${unit.name}</b>
+Tanggal Titik Tayang: ${data.dates.length} hari
+Total: <b>Rp ${totalAmount.toLocaleString('id-ID')}</b>
+Pemesan: ${buyer?.name || 'User'}
+Status Pembayaran: ${initialStatus === 'menunggu_verifikasi' ? '❌ Belum diverifikasi' : '⌛ Pending'}
+
+Segera periksa Dasbor Petugas Anda untuk informasi lebih detail.
+                `.trim();
+
+                for (const assignee of assignments) {
+                    if (assignee.telegramChatId) {
+                        await sendTelegramMessage({
+                            chatId: assignee.telegramChatId,
+                            text: messageText,
+                        });
+                    }
+                }
+            }
+        } catch (error) {
+            console.error('Failed to send telegram notification:', error);
+        }
+    }, 0);
 
     return result;
 }
@@ -231,6 +275,53 @@ export async function uploadPaymentProof(
         })
         .where(and(eq(orders.id, orderId), eq(orders.userId, userId)))
         .returning();
+
+    if (updated) {
+        // Trigger Telegram notification asynchronously for assigned Petugas
+        setTimeout(async () => {
+            try {
+                // Find Petugas assigned to this unit
+                const assignments = await db
+                    .select({
+                        petugasName: user.name,
+                        telegramChatId: user.telegramChatId,
+                    })
+                    .from(petugasAssignments)
+                    .innerJoin(user, eq(petugasAssignments.userId, user.id))
+                    .where(eq(petugasAssignments.unitId, updated.unitId));
+
+                if (assignments.length > 0) {
+                    // Fetch user data who ordered and unit info
+                    const [buyer] = await db.select({ name: user.name }).from(user).where(eq(user.id, userId)).limit(1);
+                    const [unit] = await db.select({ name: videotronUnits.name }).from(videotronUnits).where(eq(videotronUnits.id, updated.unitId)).limit(1);
+
+                    const messageText = `
+<b>💳 Bukti Pembayaran Diunggah!</b>
+
+Unit: <b>${unit?.name || 'Videotron'}</b>
+Order ID: ${updated.orderNumber}
+Total: <b>Rp ${updated.totalAmount.toLocaleString('id-ID')}</b>
+Pemesan: ${buyer?.name || 'User'}
+Status: ⌛ Menunggu Verifikasi
+
+Silakan verifikasi bukti transfer melalui Dasbor Petugas.
+                    `.trim();
+
+                    for (const assignee of assignments) {
+                        if (assignee.telegramChatId) {
+                            await sendTelegramMessage({
+                                chatId: assignee.telegramChatId,
+                                text: messageText,
+                            });
+                        }
+                    }
+                }
+            } catch (error) {
+                console.error('Failed to send telegram notification for payment proof:', error);
+            }
+        }, 0);
+    }
+
     return updated;
 }
 

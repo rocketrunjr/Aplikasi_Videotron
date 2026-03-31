@@ -6,7 +6,7 @@ import * as schema from "../db/schema.js";
 export const auth = betterAuth({
     basePath: "/api/auth",
     database: drizzleAdapter(db, {
-        provider: "pg",
+        provider: "sqlite",
         schema: {
             user: schema.user,
             session: schema.session,
@@ -44,6 +44,12 @@ export const auth = betterAuth({
                 type: "string",
                 required: false,
                 input: true,
+            },
+            telegramChatId: {
+                type: "string",
+                required: false,
+                input: true,
+                fieldName: "telegramChatId",
             },
             accountType: {
                 type: "string",

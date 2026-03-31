@@ -40,6 +40,7 @@ export async function getAllUsers(filters?: {
                 name: user.name,
                 email: user.email,
                 phone: user.phone,
+                telegramChatId: user.telegramChatId,
                 company: user.company,
                 accountType: user.accountType,
                 role: user.role,
@@ -72,6 +73,7 @@ export async function updateUser(
     data: Partial<{
         name: string;
         phone: string;
+        telegramChatId: string;
         company: string;
         address: string;
         accountType: string;

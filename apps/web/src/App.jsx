@@ -18,6 +18,7 @@ import AdminProfilePage from './pages/AdminProfilePage';
 import AdminCMSPage from './pages/AdminCMSPage';
 import PetugasDashboardPage from './pages/PetugasDashboardPage';
 import PetugasOrdersPage from './pages/PetugasOrdersPage';
+import PetugasOrderDetailPage from './pages/PetugasOrderDetailPage';
 import PetugasReportsPage from './pages/PetugasReportsPage';
 import PetugasVouchersPage from './pages/PetugasVouchersPage';
 import PetugasProfilePage from './pages/PetugasProfilePage';
@@ -57,6 +58,7 @@ function App() {
           {/* Petugas Routes — require petugas role */}
           <Route path="/petugas" element={<RequirePetugas><PetugasDashboardPage /></RequirePetugas>} />
           <Route path="/petugas/pesanan" element={<RequirePetugas><PetugasOrdersPage /></RequirePetugas>} />
+          <Route path="/petugas/pesanan/:id" element={<RequirePetugas><PetugasOrderDetailPage /></RequirePetugas>} />
           <Route path="/petugas/laporan" element={<RequirePetugas><PetugasReportsPage /></RequirePetugas>} />
           <Route path="/petugas/voucher" element={<RequirePetugas><PetugasVouchersPage /></RequirePetugas>} />
           <Route path="/petugas/profil" element={<RequirePetugas><PetugasProfilePage /></RequirePetugas>} />

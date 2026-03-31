@@ -1,41 +1,39 @@
 import {
-    pgTable,
+    sqliteTable,
     text,
-    timestamp,
-    boolean,
     integer,
-    uuid,
-    date,
-} from "drizzle-orm/pg-core";
+} from "drizzle-orm/sqlite-core";
 import { relations } from "drizzle-orm";
+import { v4 as uuidv4 } from "uuid";
 
 // ─── Better Auth managed tables ──────────────────────────────────────────────
 // Better Auth creates: user, session, account, verification
 // We define the `user` table here so Drizzle is aware of it and we can add
 // our custom columns. Better Auth will use this definition if we pass it.
 
-export const user = pgTable("user", {
+export const user = sqliteTable("user", {
     id: text("id").primaryKey(),
     name: text("name").notNull(),
     email: text("email").notNull().unique(),
-    emailVerified: boolean("email_verified").notNull().default(false),
+    emailVerified: integer("email_verified", { mode: 'boolean' }).notNull().default(false),
     image: text("image"),
     phone: text("phone"),
     company: text("company"),
     address: text("address"),
+    telegramChatId: text("telegram_chat_id"),
     accountType: text("account_type").notNull().default("pribadi"), // pribadi | perusahaan | pemerintah
     role: text("role").notNull().default("user"), // user | admin | petugas
     status: text("status").notNull().default("active"), // active | suspended
-    createdAt: timestamp("created_at").notNull().defaultNow(),
-    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+    createdAt: integer("created_at", { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+    updatedAt: integer("updated_at", { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
 });
 
-export const session = pgTable("session", {
+export const session = sqliteTable("session", {
     id: text("id").primaryKey(),
-    expiresAt: timestamp("expires_at").notNull(),
+    expiresAt: integer("expires_at", { mode: 'timestamp' }).notNull(),
     token: text("token").notNull().unique(),
-    createdAt: timestamp("created_at").notNull(),
-    updatedAt: timestamp("updated_at").notNull(),
+    createdAt: integer("created_at", { mode: 'timestamp' }).notNull(),
+    updatedAt: integer("updated_at", { mode: 'timestamp' }).notNull(),
     ipAddress: text("ip_address"),
     userAgent: text("user_agent"),
     userId: text("user_id")
@@ -43,7 +41,7 @@ export const session = pgTable("session", {
         .references(() => user.id, { onDelete: "cascade" }),
 });
 
-export const account = pgTable("account", {
+export const account = sqliteTable("account", {
     id: text("id").primaryKey(),
     accountId: text("account_id").notNull(),
     providerId: text("provider_id").notNull(),
@@ -53,27 +51,27 @@ export const account = pgTable("account", {
     accessToken: text("access_token"),
     refreshToken: text("refresh_token"),
     idToken: text("id_token"),
-    accessTokenExpiresAt: timestamp("access_token_expires_at"),
-    refreshTokenExpiresAt: timestamp("refresh_token_expires_at"),
+    accessTokenExpiresAt: integer("access_token_expires_at", { mode: 'timestamp' }),
+    refreshTokenExpiresAt: integer("refresh_token_expires_at", { mode: 'timestamp' }),
     scope: text("scope"),
     password: text("password"),
-    createdAt: timestamp("created_at").notNull(),
-    updatedAt: timestamp("updated_at").notNull(),
+    createdAt: integer("created_at", { mode: 'timestamp' }).notNull(),
+    updatedAt: integer("updated_at", { mode: 'timestamp' }).notNull(),
 });
 
-export const verification = pgTable("verification", {
+export const verification = sqliteTable("verification", {
     id: text("id").primaryKey(),
     identifier: text("identifier").notNull(),
     value: text("value").notNull(),
-    expiresAt: timestamp("expires_at").notNull(),
-    createdAt: timestamp("created_at"),
-    updatedAt: timestamp("updated_at"),
+    expiresAt: integer("expires_at", { mode: 'timestamp' }).notNull(),
+    createdAt: integer("created_at", { mode: 'timestamp' }),
+    updatedAt: integer("updated_at", { mode: 'timestamp' }),
 });
 
 // ─── Application tables ──────────────────────────────────────────────────────
 
-export const videotronUnits = pgTable("videotron_units", {
-    id: uuid("id").defaultRandom().primaryKey(),
+export const videotronUnits = sqliteTable("videotron_units", {
+    id: text("id").primaryKey().$defaultFn(() => uuidv4()),
     code: text("code").notNull().unique(),
     name: text("name").notNull(),
     location: text("location").notNull(),
@@ -84,18 +82,18 @@ export const videotronUnits = pgTable("videotron_units", {
     pricePerDay: integer("price_per_day").notNull(),
     imageUrl: text("image_url"),
     maxSlotsPerDay: integer("max_slots_per_day").notNull().default(1),
-    isActive: boolean("is_active").notNull().default(true),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
-    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+    isActive: integer("is_active", { mode: 'boolean' }).notNull().default(true),
+    createdAt: integer("created_at", { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+    updatedAt: integer("updated_at", { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
 });
 
-export const orders = pgTable("orders", {
-    id: uuid("id").defaultRandom().primaryKey(),
+export const orders = sqliteTable("orders", {
+    id: text("id").primaryKey().$defaultFn(() => uuidv4()),
     orderNumber: text("order_number").notNull().unique(),
     userId: text("user_id")
         .notNull()
         .references(() => user.id, { onDelete: "cascade" }),
-    unitId: uuid("unit_id")
+    unitId: text("unit_id")
         .notNull()
         .references(() => videotronUnits.id, { onDelete: "restrict" }),
     status: text("status").notNull().default("pending"),
@@ -109,62 +107,62 @@ export const orders = pgTable("orders", {
     subtotal: integer("subtotal").notNull().default(0),
     totalAmount: integer("total_amount").notNull().default(0),
     adminNotes: text("admin_notes"),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
-    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+    createdAt: integer("created_at", { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+    updatedAt: integer("updated_at", { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
 });
 
-export const orderDates = pgTable("order_dates", {
-    id: uuid("id").defaultRandom().primaryKey(),
-    orderId: uuid("order_id")
+export const orderDates = sqliteTable("order_dates", {
+    id: text("id").primaryKey().$defaultFn(() => uuidv4()),
+    orderId: text("order_id")
         .notNull()
         .references(() => orders.id, { onDelete: "cascade" }),
-    date: date("date").notNull(),
+    date: text("date").notNull(),
     price: integer("price").notNull(),
 });
 
-export const broadcastProofs = pgTable("broadcast_proofs", {
-    id: uuid("id").defaultRandom().primaryKey(),
-    orderId: uuid("order_id")
+export const broadcastProofs = sqliteTable("broadcast_proofs", {
+    id: text("id").primaryKey().$defaultFn(() => uuidv4()),
+    orderId: text("order_id")
         .notNull()
         .references(() => orders.id, { onDelete: "cascade" }),
-    date: date("date").notNull(),
+    date: text("date").notNull(),
     timeOfDay: text("time_of_day").notNull().default("siang"), // siang | malam
     imageUrl: text("image_url").notNull(),
-    uploadedAt: timestamp("uploaded_at").notNull().defaultNow(),
+    uploadedAt: integer("uploaded_at", { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
 });
 
-export const bankSettings = pgTable("bank_settings", {
-    id: uuid("id").defaultRandom().primaryKey(),
+export const bankSettings = sqliteTable("bank_settings", {
+    id: text("id").primaryKey().$defaultFn(() => uuidv4()),
     bankName: text("bank_name").notNull(),
     accountNumber: text("account_number").notNull(),
     accountHolder: text("account_holder").notNull(),
-    isActive: boolean("is_active").notNull().default(true),
-    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+    isActive: integer("is_active", { mode: 'boolean' }).notNull().default(true),
+    updatedAt: integer("updated_at", { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
 });
 
-export const vouchers = pgTable("vouchers", {
-    id: uuid("id").defaultRandom().primaryKey(),
+export const vouchers = sqliteTable("vouchers", {
+    id: text("id").primaryKey().$defaultFn(() => uuidv4()),
     code: text("code").notNull().unique(),
     discountAmount: integer("discount_amount").notNull(),
     discountType: text("discount_type").notNull().default("fixed"), // fixed | percentage
-    isActive: boolean("is_active").notNull().default(true),
+    isActive: integer("is_active", { mode: 'boolean' }).notNull().default(true),
     usageLimit: integer("usage_limit").notNull().default(0), // 0 = unlimited
     usedCount: integer("used_count").notNull().default(0),
-    validFrom: timestamp("valid_from"),
-    validUntil: timestamp("valid_until"),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
-    updatedAt: timestamp("updated_at").notNull().defaultNow(),
+    validFrom: integer("valid_from", { mode: 'timestamp' }),
+    validUntil: integer("valid_until", { mode: 'timestamp' }),
+    createdAt: integer("created_at", { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
+    updatedAt: integer("updated_at", { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
 });
 
-export const petugasAssignments = pgTable("petugas_assignments", {
-    id: uuid("id").defaultRandom().primaryKey(),
+export const petugasAssignments = sqliteTable("petugas_assignments", {
+    id: text("id").primaryKey().$defaultFn(() => uuidv4()),
     userId: text("user_id")
         .notNull()
         .references(() => user.id, { onDelete: "cascade" }),
-    unitId: uuid("unit_id")
+    unitId: text("unit_id")
         .notNull()
         .references(() => videotronUnits.id, { onDelete: "cascade" }),
-    createdAt: timestamp("created_at").notNull().defaultNow(),
+    createdAt: integer("created_at", { mode: 'timestamp' }).notNull().$defaultFn(() => new Date()),
 });
 
 // ─── Relations ───────────────────────────────────────────────────────────────

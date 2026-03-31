@@ -6,6 +6,7 @@ import {
     petugasAssignments, vouchers, broadcastProofs,
 } from "../db/schema.js";
 import { sql, eq, and, gte, lte, count, sum, inArray, desc } from "drizzle-orm";
+import * as ordersService from "../services/orders.service.js";
 
 const router = Router();
 
@@ -163,6 +164,108 @@ router.get("/orders/:id", async (req, res) => {
     } catch (error: any) {
         console.error("Petugas order detail error:", error);
         res.status(500).json({ error: "Failed to fetch order" });
+    }
+});
+
+// PATCH /api/petugas/orders/:id/status — Update order status
+router.patch("/orders/:id/status", async (req, res) => {
+    try {
+        const unitIds = await getAssignedUnitIds(req.user!.id);
+        const orderId = req.params.id;
+
+        const [orderData] = await db.select({ unitId: orders.unitId }).from(orders).where(eq(orders.id, orderId)).limit(1);
+        if (!orderData || !unitIds.includes(orderData.unitId)) {
+            return res.status(403).json({ error: "Unauthorized access to this order" });
+        }
+
+        const { status } = req.body;
+        const validStatuses = [
+            "pending",
+            "menunggu_verifikasi",
+            "ditolak",
+            "sudah_bayar",
+            "tayang",
+            "selesai",
+            "dibatalkan",
+        ];
+        if (!status || !validStatuses.includes(status)) {
+            res.status(400).json({
+                error: `Invalid status. Must be one of: ${validStatuses.join(", ")}`,
+            });
+            return;
+        }
+
+        const order = await ordersService.updateOrderStatus(orderId, status);
+        if (!order) {
+            res.status(404).json({ error: "Order not found" });
+            return;
+        }
+
+        res.json({ data: order });
+    } catch (error) {
+        console.error("Petugas update status error:", error);
+        res.status(500).json({ error: "Failed to update order status" });
+    }
+});
+
+// POST /api/petugas/orders/:id/invoice — Upload invoice
+router.post("/orders/:id/invoice", async (req, res) => {
+    try {
+        const unitIds = await getAssignedUnitIds(req.user!.id);
+        const orderId = req.params.id;
+
+        const [orderData] = await db.select({ unitId: orders.unitId }).from(orders).where(eq(orders.id, orderId)).limit(1);
+        if (!orderData || !unitIds.includes(orderData.unitId)) {
+            return res.status(403).json({ error: "Unauthorized access to this order" });
+        }
+
+        const { fileUrl } = req.body;
+        if (!fileUrl) {
+            res.status(400).json({ error: "fileUrl is required" });
+            return;
+        }
+
+        const order = await ordersService.uploadInvoice(orderId, fileUrl);
+        if (!order) {
+            res.status(404).json({ error: "Order not found" });
+            return;
+        }
+
+        res.json({ data: order });
+    } catch (error) {
+        console.error("Petugas upload invoice error:", error);
+        res.status(500).json({ error: "Failed to upload invoice" });
+    }
+});
+
+// POST /api/petugas/orders/:id/broadcast-proof — Upload broadcast proof image
+router.post("/orders/:id/broadcast-proof", async (req, res) => {
+    try {
+        const unitIds = await getAssignedUnitIds(req.user!.id);
+        const orderId = req.params.id;
+
+        const [orderData] = await db.select({ unitId: orders.unitId }).from(orders).where(eq(orders.id, orderId)).limit(1);
+        if (!orderData || !unitIds.includes(orderData.unitId)) {
+            return res.status(403).json({ error: "Unauthorized access to this order" });
+        }
+
+        const { date, timeOfDay, imageUrl } = req.body;
+        if (!date || !imageUrl) {
+            res.status(400).json({ error: "date and imageUrl are required" });
+            return;
+        }
+
+        const proof = await ordersService.uploadBroadcastProof({
+            orderId: orderId,
+            date,
+            timeOfDay: timeOfDay || "siang",
+            imageUrl,
+        });
+
+        res.status(201).json({ data: proof });
+    } catch (error) {
+        console.error("Petugas upload broadcast proof error:", error);
+        res.status(500).json({ error: "Failed to upload broadcast proof" });
     }
 });
 

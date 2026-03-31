@@ -17,6 +17,7 @@ const PetugasProfilePage = () => {
         phone: '',
         company: '',
         address: '',
+        telegramChatId: '',
     });
 
     const [passwordData, setPasswordData] = useState({
@@ -38,6 +39,7 @@ const PetugasProfilePage = () => {
                 phone: p.phone || '',
                 company: p.company || '',
                 address: p.address || '',
+                telegramChatId: p.telegramChatId || '',
             });
         }
     }, [profile, user]);
@@ -239,6 +241,22 @@ const PetugasProfilePage = () => {
                                 className="w-full bg-slate-50 border border-slate-200 rounded-lg px-4 py-3 focus:ring-2 focus:ring-primary focus:border-primary outline-none text-slate-900 resize-none"
                                 placeholder="Alamat lengkap"
                             />
+                        </div>
+                        <div className="space-y-2 bg-blue-50/50 p-4 rounded-lg border border-blue-100">
+                            <div className="flex items-center gap-2 mb-1">
+                                <span className="material-symbols-outlined text-blue-500">notifications_active</span>
+                                <label className="text-sm font-semibold text-slate-800">Telegram Chat ID (Untuk Notifikasi Pesanan)</label>
+                            </div>
+                            <input
+                                name="telegramChatId"
+                                value={formData.telegramChatId}
+                                onChange={handleChange}
+                                className="w-full h-11 bg-white border border-slate-200 rounded-lg px-4 focus:ring-2 focus:ring-primary focus:border-primary outline-none text-slate-900"
+                                placeholder="Contoh: 123456789"
+                            />
+                            <p className="text-xs text-slate-500 mt-2">
+                                Dapatkan ID dengan memulai obrolan ke bot <a href="https://t.me/userinfobot" target="_blank" rel="noreferrer" className="text-primary hover:underline">@userinfobot</a> di Telegram, lalu masukkan angka ID Anda di sini.
+                            </p>
                         </div>
                         <div className="flex justify-end">
                             <button

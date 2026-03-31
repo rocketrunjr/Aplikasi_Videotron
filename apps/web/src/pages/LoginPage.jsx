@@ -14,6 +14,7 @@ const LoginPage = () => {
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const [captchaToken, setCaptchaToken] = useState('');
+    const [captchaKey, setCaptchaKey] = useState(0);
     const [cms] = useState(loadCms);
     const loginBanner = cms.bannerLogin || DEFAULT_LOGIN_BANNER;
     const navigate = useNavigate();
@@ -43,12 +44,18 @@ const LoginPage = () => {
                 // If it's a 400 with our custom message or a generic error with 'captcha' inside
                 const isCaptchaErr = result.error.status === 400 || result.error.message?.toLowerCase().includes('captcha');
                 setError(isCaptchaErr ? 'Verifikasi Captcha gagal. Silakan muat ulang halaman atau coba lagi.' : (result.error.message || 'Email atau kata sandi salah.'));
+                // Reset captcha
+                setCaptchaToken('');
+                setCaptchaKey(k => k + 1);
                 return;
             }
             // After successful sign in, useAuth will update and useEffect will redirect
         } catch (err) {
             const isCaptchaErr = err?.status === 400 || err?.message?.toLowerCase().includes('captcha');
             setError(isCaptchaErr ? 'Verifikasi Captcha gagal. Silakan muat ulang halaman atau coba lagi.' : (err?.message || 'Email atau kata sandi salah. Silakan coba lagi.'));
+            // Reset captcha
+            setCaptchaToken('');
+            setCaptchaKey(k => k + 1);
         }
     };
 
@@ -187,6 +194,7 @@ const LoginPage = () => {
                             {email && password.length >= 1 && (
                                 <div className="flex justify-center">
                                     <CloudflareTurnstile
+                                        key={captchaKey}
                                         siteKey={import.meta.env.VITE_TURNSTILE_SITE_KEY}
                                         onVerify={(token) => setCaptchaToken(token)}
                                         onExpire={() => setCaptchaToken('')}
