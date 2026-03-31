@@ -45,7 +45,10 @@ app.use((req, res, next) => {
 });
 
 // Serve uploaded files statically
-const uploadDir = process.env.UPLOAD_DIR || "./uploads";
+// Serve uploaded files statically
+const isVercel = process.env.VERCEL === "1";
+const uploadDir = process.env.UPLOAD_DIR || (isVercel ? "/tmp/uploads" : "./uploads");
+
 // Ensure upload directories exist
 const uploadSubDirs = [
     "material",
@@ -59,7 +62,11 @@ const uploadSubDirs = [
 for (const dir of uploadSubDirs) {
     const fullPath = path.join(uploadDir, dir);
     if (!fs.existsSync(fullPath)) {
-        fs.mkdirSync(fullPath, { recursive: true });
+        try {
+            fs.mkdirSync(fullPath, { recursive: true });
+        } catch (err) {
+            console.warn(`[WARNING] Could not create upload dir ${fullPath} (expected in read-only Vercel environment)`);
+        }
     }
 }
 app.use("/uploads", express.static(uploadDir));
