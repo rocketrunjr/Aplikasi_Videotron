@@ -3,7 +3,7 @@
  * All requests include credentials (cookies) for auth.
  */
 
-const BASE_URL = "";
+const BASE_URL = import.meta.env.VITE_API_URL || "";
 
 async function request(endpoint, options = {}) {
     const { body, ...rest } = options;
